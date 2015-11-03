@@ -40,7 +40,10 @@ module NFGClient
           @logger.info " nfg_soap_request succeeded: #{ response.body.inspect }"
           return_value = parse_result(response.code, response.body, response.message, nfg_method)
         rescue StandardError => e
-          @logger.error " nfg_soap_request failed: #{ e.message }"
+          @logger.error " nfg_soap_request failed for #{nfg_method} with #{params}: #{ e.message }"
+          if response && response.body.present?
+            @logger.error " nfg_soap_request failed: #{response.body.inspect}"
+          end
           @logger.error e.backtrace.join(' ')
 
           return_value = Hash.new
@@ -101,6 +104,7 @@ module NFGClient
        uri = URI.parse(url)
        https_conn = Net::HTTP.new(uri.host, uri.port)
        https_conn.use_ssl = true
+       https_conn.read_timeout = 120
        https_conn.post(uri.path, soap_request, headers)
     end
 
